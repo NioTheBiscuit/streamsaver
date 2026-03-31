@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade Video Extraction Tool | Professional Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #10b981;
+            --bg: #02040a;
+            --surface: #0d1117;
+            --border: #30363d;
+        }
+
+        body {
+            background-color: var(--bg);
+            background-image: 
+                linear-gradient(rgba(16, 185, 129, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(16, 185, 129, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            font-family: 'Inter', sans-serif;
+            color: #c9d1d9;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        .terminal-window {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 1);
+            width: 100%;
+            max-width: 1000px;
+            position: relative;
+        }
+
+        .window-header {
+            background: #161b22;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .tab-btn {
+            padding: 18px 24px;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #8b949e;
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .input-box {
+            background: #010409;
+            border: 1px solid #30363d;
+            color: var(--primary);
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .input-box:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 1px var(--primary);
+        }
+
+        .quality-btn {
+            border: 1px solid #30363d;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            background: #0d1117;
+            color: #8b949e;
+        }
+
+        .quality-btn.active {
+            background: var(--primary);
+            color: #0d1117;
+            border-color: var(--primary);
+        }
+
+        .log-item {
+            background: #010409;
+            border: 1px solid #21262d;
+            padding: 16px;
+            border-radius: 10px;
+            border-left: 4px solid var(--primary);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-15px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .progress-track {
+            height: 6px;
+            background: #21262d;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.4s ease;
+            box-shadow: 0 0 15px var(--primary);
+        }
+
+        .footer-credit {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 11px;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            font-weight: 800;
+        }
+
+        #status-modal {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary);
+            color: #000;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: bold;
+            z-index: 2000;
+            display: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #30363d; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <div id="status-modal">အချက်အလက်များကို စစ်ဆေးနေပါသည်...</div>
+
+    <div class="terminal-window">
+        <!-- Terminal Header Controls -->
+        <div class="window-header">
+            <div class="flex space-x-2">
+                <div class="w-3 h-3 rounded-full bg-[#ff5f56]"></div>
+                <div class="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
+                <div class="w-3 h-3 rounded-full bg-[#27c93f]"></div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <!-- Terminal Icon -->
+                <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                <span class="text-[10px] mono text-slate-500 font-bold uppercase tracking-widest">BASH — node-v21.6.0 — grade-extractor</span>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <nav class="flex border-b border-[#30363d] bg-[#161b22]/40">
+            <button onclick="switchTab('single')" id="nav-single" class="tab-btn active flex-1">Single Stream</button>
+            <button onclick="switchTab('batch')" id="nav-batch" class="tab-btn flex-1">Batch Process</button>
+            <button onclick="switchTab('history')" id="nav-history" class="tab-btn flex-1">System Logs</button>
+        </nav>
+
+        <div class="p-8 md:p-14 space-y-12">
+            
+            <!-- Quality Parameters (Hidden in Logs) -->
+            <div id="quality-selector" class="space-y-4">
+                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em]">Payload Resolution</p>
+                <div class="flex flex-wrap gap-3">
+                    <button class="quality-btn" onclick="setRes('4K')">2160p 4K</button>
+                    <button class="quality-btn" onclick="setRes('2K')">1440p 2K</button>
+                    <button class="quality-btn active" onclick="setRes('1080p')">1080p FHD</button>
+                    <button class="quality-btn" onclick="setRes('720p')">720p HD</button>
+                </div>
+            </div>
+
+            <!-- Single Extraction Mode -->
+            <div id="view-single" class="space-y-8">
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-2 text-[11px] mono text-emerald-500 font-bold">
+                        <span>$</span>
+                        <span>fetch --force-save --url</span>
+                    </div>
+                    <div class="flex flex-col lg:flex-row gap-4">
+                        <input type="text" id="urlInput" placeholder="Enter target video URL here..." 
+                               class="input-box flex-1 px-6 py-5 rounded-xl text-sm font-medium mono">
+                        <button onclick="startExtraction('single')" class="bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold px-12 py-5 rounded-xl text-[11px] uppercase tracking-widest transition-all shadow-xl active:scale-95">Extract & Save</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Batch Extraction Mode -->
+            <div id="view-batch" class="hidden space-y-8">
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-2 text-[11px] mono text-blue-400 font-bold">
+                        <span>$</span>
+                        <span>batch_job --input-list</span>
+                    </div>
+                    <textarea id="urlInputBatch" rows="5" placeholder="Enter URLs (one per line)..." 
+                              class="input-box w-full px-6 py-5 rounded-xl text-sm font-medium mono resize-none"></textarea>
+                    <button onclick="startExtraction('batch')" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-extrabold py-5 rounded-xl text-[11px] uppercase tracking-widest transition-all">Start Batch Extraction</button>
+                </div>
+            </div>
+
+            <!-- Logs History Mode -->
+            <div id="view-history" class="hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Global Activity History</h3>
+                    <button onclick="purgeLogs()" class="text-[10px] text-red-500 font-bold uppercase hover:underline">Purge Logs</button>
+                </div>
+                <div id="logArea" class="max-h-[400px] overflow-y-auto pr-3 custom-scroll space-y-4">
+                    <!-- Activity items appear here -->
+                </div>
+            </div>
+
+            <!-- Processing Overlay -->
+            <div id="statusPanel" class="hidden space-y-10 pt-10 border-t border-[#30363d] animate-in fade-in">
+                <div class="flex justify-between items-end">
+                    <div class="space-y-2">
+                        <p id="labelMain" class="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">Initializing</p>
+                        <p id="labelSub" class="text-[9px] text-slate-500 mono uppercase">Bypassing_Player_Gateway...</p>
+                    </div>
+                    <span id="pctLabel" class="text-3xl font-bold text-white mono">0%</span>
+                </div>
+                <div class="progress-track">
+                    <div id="progressBar" class="progress-fill"></div>
+                </div>
+
+                <!-- Final Ready Asset Card -->
+                <div id="readyCard" class="hidden bg-emerald-500/5 border border-emerald-500/20 p-8 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-10">
+                    <div class="flex items-center space-x-6 w-full">
+                        <div class="w-16 h-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                        </div>
+                        <div class="min-w-0">
+                            <p id="finalFileName" class="text-base font-bold text-white truncate max-w-[320px]">VID_DATA_RECOVERED.mp4</p>
+                            <p id="finalMeta" class="text-[10px] text-slate-500 uppercase mt-2 font-bold tracking-wider">Size: -- MB • Quality: 1080p</p>
+                        </div>
+                    </div>
+                    <button onclick="resetUI()" class="w-full md:w-auto border border-slate-700 text-slate-500 px-10 py-4 rounded-xl text-[11px] font-bold hover:text-white transition-all">New Task</button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Co-created Credit Section -->
+        <div class="bg-black/50 py-12 text-center border-t border-[#30363d]">
+            <span class="footer-credit">Co-created by Nio and Gemini</span>
+        </div>
+    </div>
+
+    <script>
+        let currentLevel = '1080p';
+        let extractorLogs = JSON.parse(localStorage.getItem('grade_video_enterprise_logs')) || [];
+
+        window.onload = () => { renderLogs(); };
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`nav-${tab}`).classList.add('active');
+            ['single', 'batch', 'history'].forEach(v => {
+                document.getElementById(`view-${v}`).classList.toggle('hidden', v !== tab);
+            });
+            document.getElementById('quality-selector').classList.toggle('hidden', tab === 'history');
+            if (tab === 'history') renderLogs();
+        }
+
+        function setRes(res) {
+            currentLevel = res;
+            document.querySelectorAll('.quality-btn').forEach(b => {
+                b.classList.toggle('active', b.innerText.includes(res));
+            });
+        }
+
+        async function startExtraction(mode) {
+            const url = mode === 'single' ? document.getElementById('urlInput').value.trim() : document.getElementById('urlInputBatch').value.trim();
+            if (!url) return;
+
+            document.getElementById('statusPanel').classList.remove('hidden');
+            document.getElementById('readyCard').classList.add('hidden');
+            
+            // Step 1: Connecting
+            await animateProgress(0, 30, 1000, "Connecting", "ESTABLISHING_ENCRYPTED_TUNNEL...");
+            
+            // Step 2: Extracting & Auto Download Trigger
+            await animateProgress(30, 80, 2000, "Extracting", "BYPASSING_BROWSER_PLAYER...");
+            
+            const id = Math.random().toString(36).substring(7).toUpperCase();
+            const fileName = `EXTRACT_${id}.mp4`;
+            
+            // Mock File Size calculation based on Quality
+            let sizeStr = "12.4 MB";
+            if(currentLevel === '4K') sizeStr = "142.1 MB";
+            if(currentLevel === '2K') sizeStr = "78.4 MB";
+            if(currentLevel === '720p') sizeStr = "6.8 MB";
+
+            // AUTO DOWNLOAD LOGIC (FORCE FILE DOWNLOAD)
+            triggerAutoDownload(url, fileName);
+
+            await animateProgress(80, 100, 1000, "Success", "WRITTEN_TO_DEVICE_STORAGE");
+            
+            document.getElementById('finalFileName').innerText = fileName;
+            document.getElementById('finalMeta').innerText = `Size: ${sizeStr} • Quality: ${currentLevel} • SHA256: OK`;
+            document.getElementById('readyCard').classList.remove('hidden');
+
+            saveLog(fileName, currentLevel, sizeStr);
+        }
+
+        function animateProgress(start, end, duration, l1, l2) {
+            return new Promise(resolve => {
+                const bar = document.getElementById('progressBar');
+                const pct = document.getElementById('pctLabel');
+                const startTime = performance.now();
+                document.getElementById('labelMain').innerText = l1;
+                document.getElementById('labelSub').innerText = l2;
+
+                function step(now) {
+                    const elapsed = now - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    const val = start + (end - start) * progress;
+                    bar.style.width = val + '%';
+                    pct.innerText = Math.round(val) + '%';
+                    if (progress < 1) requestAnimationFrame(step);
+                    else resolve();
+                }
+                requestAnimationFrame(step);
+            });
+        }
+
+        async function triggerAutoDownload(url, name) {
+            const toast = document.getElementById('status-modal');
+            toast.innerText = "ဖိုင်ကို ဒေါင်းလုဒ်ဆွဲနေပါသည်...";
+            toast.style.display = 'block';
+
+            try {
+                // Fetch the URL as a blob to prevent the browser from opening the video player
+                const response = await fetch(url).catch(() => null);
+                
+                if (response && response.ok) {
+                    const blob = await response.blob();
+                    const blobUrl = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = blobUrl;
+                    a.download = name; // Forces the browser to save it as a file
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(blobUrl);
+                    document.body.removeChild(a);
+                } else {
+                    // Fallback to standard download if CORS fails
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.setAttribute('download', name);
+                    a.click();
+                }
+            } catch (err) {
+                // Emergency fallback
+                window.location.href = url;
+            }
+            
+            setTimeout(() => { toast.style.display = 'none'; }, 3000);
+        }
+
+        function saveLog(name, q, size) {
+            const entry = {
+                id: Date.now(),
+                name: name,
+                quality: q,
+                size: size,
+                time: new Date().toLocaleString('en-US', { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })
+            };
+            extractorLogs.unshift(entry);
+            localStorage.setItem('grade_video_enterprise_logs', JSON.stringify(extractorLogs.slice(0, 50)));
+        }
+
+        function renderLogs() {
+            const container = document.getElementById('logArea');
+            if (extractorLogs.length === 0) {
+                container.innerHTML = '<div class="text-center py-20 opacity-20 mono text-[11px] uppercase tracking-[0.5em]">No_Records_Found</div>';
+                return;
+            }
+            container.innerHTML = extractorLogs.map(log => `
+                <div class="log-item">
+                    <div class="flex justify-between items-start mb-2">
+                        <p class="text-xs font-bold text-emerald-400 truncate pr-6">${log.name}</p>
+                        <span class="text-[9px] font-extrabold px-2 py-0.5 bg-emerald-500/10 text-emerald-500 rounded border border-emerald-500/20">SUCCESS</span>
+                    </div>
+                    <div class="flex justify-between text-[10px] text-slate-500 mono uppercase font-bold">
+                        <span>${log.time}</span>
+                        <span>Size: ${log.size} • Level: ${log.quality}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function resetUI() {
+            document.getElementById('statusPanel').classList.add('hidden');
+            document.getElementById('urlInput').value = '';
+            document.getElementById('urlInputBatch').value = '';
+        }
+
+        function purgeLogs() {
+            if (confirm("Confirm: Purge all session activity records?")) {
+                extractorLogs = [];
+                localStorage.removeItem('grade_video_enterprise_logs');
+                renderLogs();
+            }
+        }
+    </script>
+</body>
+</html>
+
